@@ -1,0 +1,25 @@
+{
+    "comments": "The db_type must be one of (mysql,pg,dm,sqlite)",
+    "server": {
+      "addr": ":8080"
+    },
+    "db": {
+      "name": "db_neutral_demo",
+      "create_db_if_not_exists": true,
+      "auto_mirgate": true,
+      "mirgate_only": false,
+      "typ": "postgres",
+      "mysql": {
+        "fmt_dsn": "root:dangerous@tcp(10.6.229.192:32253)/%s?charset=utf8&parseTime=true&loc=Local&&timeout=10s"
+      },
+      "postgres": {
+        "fmt_dsn": "host=10.6.51.101 port=31838 user=postgres password=Aa123456 dbname=%s sslmode=disable TimeZone=Asia/Shanghai"
+      },
+      "dameng": {
+        "fmt_dsn": "dm://SYSDBA:SYSDBA@127.0.0.1:5236?autoCommit=true"
+      },
+      "sqlite": {
+        "dsn": "todo"
+      }
+    }
+  }

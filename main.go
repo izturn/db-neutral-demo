@@ -1,33 +1,29 @@
 package main
 
 import (
-	"net/http"
+	"flag"
+	"os"
 
-	"github.com/manuelkiessling/go-cleanarchitecture/src/infrastructure"
-	"github.com/manuelkiessling/go-cleanarchitecture/src/interfaces"
-	"github.com/manuelkiessling/go-cleanarchitecture/src/usecases"
+	"github.com/izturn/db-neutral-demo/pkg/infra/dbstore"
+	"github.com/izturn/db-neutral-demo/pkg/infra/logger"
+	"github.com/izturn/db-neutral-demo/pkg/interface/config"
+	"github.com/izturn/db-neutral-demo/pkg/interface/dbadapter"
+	"github.com/izturn/db-neutral-demo/pkg/interface/webserver"
+	"github.com/izturn/db-neutral-demo/pkg/usecase"
 )
 
+var cfgPath = flag.String("c", "./config.json", "the path of config file")
+
 func main() {
-	dbHandler := infrastructure.NewSqliteHandler("/var/tmp/production.sqlite")
+	flag.Parse()
 
-	handlers := make(map[string]interfaces.DbHandler)
-	handlers["DbUserRepo"] = dbHandler
-	handlers["DbCustomerRepo"] = dbHandler
-	handlers["DbItemRepo"] = dbHandler
-	handlers["DbOrderRepo"] = dbHandler
-
-	orderInteractor := new(usecases.OrderInteractor)
-	orderInteractor.UserRepository = interfaces.NewDbUserRepo(handlers)
-	orderInteractor.ItemRepository = interfaces.NewDbItemRepo(handlers)
-	orderInteractor.OrderRepository = interfaces.NewDbOrderRepo(handlers)
-	orderInteractor.Logger = new(infrastructure.Logger)
-
-	webserviceHandler := interfaces.WebserviceHandler{}
-	webserviceHandler.OrderInteractor = orderInteractor
-
-	http.HandleFunc("/orders", func(res http.ResponseWriter, req *http.Request) {
-		webserviceHandler.ShowOrder(res, req)
-	})
-	http.ListenAndServe(":8080", nil)
+	cfg := config.MustLoad(*cfgPath)
+	s := dbstore.MustNew(&cfg.DB)
+	l := logger.New()
+	if cfg.DB.MirgateOnly {
+		l.Log("mirgate is finished, bye!")
+		os.Exit(0)
+	}
+	us := usecase.NewBookInteractor(dbadapter.New(s))
+	webserver.New(cfg.Server.Addr, us, l).Run()
 }
