@@ -37,7 +37,7 @@ func openMySQL(dbName, dsnFmt string, createDBIfNeeds bool, cfg *gorm.Config) (*
 
 		res := defDB.Exec("CREATE DATABASE IF NOT EXISTS " + dbName + ";")
 		if res.Error != nil {
-			return nil, fmt.Errorf("create db: %s is failed: %w", dbName, err)
+			return nil, fmt.Errorf("create db: %s is failed: %w", dbName, res.Error)
 		}
 		dbInst, _ := defDB.DB()
 		_ = dbInst.Close()
@@ -47,10 +47,9 @@ func openMySQL(dbName, dsnFmt string, createDBIfNeeds bool, cfg *gorm.Config) (*
 	return gorm.Open(mysql.Open(fmt.Sprintf(dsnFmt, dbName)), cfg)
 }
 
-// https://dev.to/karanpratapsingh/connecting-to-postgresql-using-gorm-24fj
-func openPostgres(dbName, dsnFmt string, createDBIfNeeds bool, cfg *gorm.Config) (*gorm.DB, error) {
+func openPostgresHelper(dbName, defDBName, dsnFmt string, createDBIfNeeds bool, cfg *gorm.Config) (*gorm.DB, error) {
 	if createDBIfNeeds {
-		defDBDsn := fmt.Sprintf(dsnFmt, "postgres")
+		defDBDsn := fmt.Sprintf(dsnFmt, defDBName)
 		defDB, err := gorm.Open(postgres.Open(defDBDsn), cfg)
 		if err != nil {
 			return nil, err
@@ -61,7 +60,7 @@ func openPostgres(dbName, dsnFmt string, createDBIfNeeds bool, cfg *gorm.Config)
 		if count == 0 {
 			res := defDB.Exec(fmt.Sprintf("CREATE DATABASE %s;", dbName))
 			if res.Error != nil {
-				return nil, fmt.Errorf("create db: %s is failed: %w", dbName, err)
+				return nil, fmt.Errorf("create db: %s is failed: %w", dbName, res.Error)
 			}
 			dbInst, _ := defDB.DB()
 			_ = dbInst.Close()
@@ -71,8 +70,17 @@ func openPostgres(dbName, dsnFmt string, createDBIfNeeds bool, cfg *gorm.Config)
 	return gorm.Open(postgres.Open(fmt.Sprintf(dsnFmt, dbName)), cfg)
 }
 
-func openDM8(dsnFmt string, cfg *gorm.Config) (*gorm.DB, error) {
+// https://dev.to/karanpratapsingh/connecting-to-postgresql-using-gorm-24fj
+func openPostgres(dbName, dsnFmt string, createDBIfNeeds bool, cfg *gorm.Config) (*gorm.DB, error) {
+	return openPostgresHelper(dbName, "postgres", dsnFmt, createDBIfNeeds, cfg)
+}
+
+func openDM8(dbName, dsnFmt string, cfg *gorm.Config) (*gorm.DB, error) {
 	return gorm.Open(dm.Open(dsnFmt), cfg)
+}
+
+func openKBv8r6(dbName, dsnFmt string, createDBIfNeeds bool, cfg *gorm.Config) (*gorm.DB, error) {
+	return openPostgresHelper(dbName, "test", dsnFmt, createDBIfNeeds, cfg)
 }
 
 func MustNew(cfg *Config) *Store {
@@ -92,11 +100,11 @@ func MustNew(cfg *Config) *Store {
 		db = algoutil.Must1(openPostgres(cfg.Name, cfg.Postgres.FmtDsn, cfg.CreateDbIfNotExists, gCfg))
 
 		// https://eco.dameng.com/document/dm/zh-cn/pm/go-rogramming-guide.html#11.7%20ORM%20%E6%96%B9%E8%A8%80%E5%8C%85
-		//https://github.com/housepower/ckman/blob/main/repository/dm8/dm8.go
 	case typDMv8:
-		db = algoutil.Must1(openDM8(cfg.DMv8.FmtDsn, gCfg))
+		db = algoutil.Must1(openDM8(cfg.Name, cfg.DMv8.FmtDsn, gCfg))
 
 	case typKBv8r6:
+		db = algoutil.Must1(openKBv8r6(cfg.Name, cfg.KBv8r6.FmtDsn, cfg.CreateDbIfNotExists, gCfg))
 
 	case typeSqlite:
 

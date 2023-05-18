@@ -18,6 +18,9 @@
       "dm_v8": {
         "fmt_dsn": "dm://SYSDBA:SYSDBA001@10.6.222.24:31994?autoCommit=true&compatibleMode=mysql"
       },
+      "kb_v8r6": {
+        "fmt_dsn": "host=10.6.222.25 port=30292 user=system password=123456 dbname=%s sslmode=disable TimeZone=Asia/Shanghai"
+      },
 
       "sqlite": {
         "dsn": "todo"
