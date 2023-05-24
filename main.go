@@ -21,7 +21,7 @@ func main() {
 	s := dbstore.MustNew(&cfg.DB)
 	l := logger.New()
 	if cfg.DB.MirgateOnly {
-		l.Log("mirgate is finished, bye!")
+		l.Log("mirgate is finished, see u again!")
 		os.Exit(0)
 	}
 	us := usecase.NewBookInteractor(dbadapter.New(s))
